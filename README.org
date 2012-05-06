@@ -6,6 +6,8 @@ only works for me.
 
 ** Screenshot
 
+#+CAPTION: A Clickable Graph of Neighborhood of selected revisions
+#+ATTR_HTML: alt="Screenshot of part of window, showing revision graph" title="Screenshot 1"
 [[file:graph-screenshot.png]]
 
 
