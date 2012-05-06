@@ -13,5 +13,9 @@
    #:stop-server
    #:clear-cache
    #:read-graph
-   #:reset))
+   #:reset
+   #:*git-project*
+   #:*dot-cmd*
+   #:*dead-revisions*
+   #:*version-names-scanner*))
 

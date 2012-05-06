@@ -10,16 +10,12 @@
   #+win32 "d:/Programs/graphviz/bin/dot.exe")
 
 (defparameter *git-project*
-  #+linux #P"/home/wim/RMFMagic/.git"
-  #-linux #P"/Users/woudshoo/Development/Source/RMFMagic/.git")
+  #P"/Users/woudshoo/Development/Source/lisp-devel-systems/wo-git-gui/.git")
 
 (defparameter *webserver-acceptor* nil)
 (defparameter *default-graph* nil)
 
-(defparameter *dead-revisions* (list "08489f848f6f2c0972fc9c3c2764eeba95dfd1a5"
-				     "d75685d883ab6c98aeea82f3f9584650eb2af44a"
-				     "51bfce6e50cb6234c6634d080c4d21bdac00ff79"
-				     "48fd16afccd7d4045e0e15233d874cb67f8a2300"))
+(defparameter *dead-revisions* nil)
 
 (defparameter *version-names-scanner*
   (cl-ppcre:create-scanner "v[0-9]+\\.[0-9]+\\.[0-9]\\.[0-9]+"))
