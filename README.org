@@ -1,0 +1,44 @@
+* Git GUI
+
+This little project visualizes the git commit graph in the browser.
+It is in very early stages of development and probably at the moment
+only works for me.
+
+** Screenshot
+
+[[./graph-screenshot.png]]
+
+
+** Dependencies
+
+|--------------------+--------------------------------+--------------------------------------|
+| Name               | How to install                 | Description / Note                   |
+|--------------------+--------------------------------+--------------------------------------|
+| graphviz/dot       | Download from www.graphviz.org | An external tool to visualize graphs |
+| git                |                                |                                      |
+| wo-git             | download from github           |                                      |
+| wo-graph-functions | download from github           |                                      |
+| wo-graph           | download from github           |                                      |
+| wo-util            | download from github           |                                      |
+| sb-ext             | Use sbcl                       | temporary, will be replaced          |
+| cl-git             | download from github           |                                      |
+| hunchentoot        | quicklisp                      |                                      |
+| cl-who             | quicklisp                      |                                      |
+| cl-ppcre           | quicklisp                      |                                      |
+| alexandria         | quicklisp                      |                                      |
+|--------------------+--------------------------------+--------------------------------------|
+
+
+** To Do
+
+Too much to mention but here is a higher goal list:
+
+- Make the setup user friendly
+- Make the selecting and refreshing of the repository available through the browser
+- Convert to using cl-git
+- Getting rid of sbcl dependency
+- Add montezuma search capabilities
+- Add gui for selecting multiple revisions
+- Add gui for selecting and storing dead revisions
+- Improve the look and feel of the web pages, they are very very plain right now.
+- etc. ...
