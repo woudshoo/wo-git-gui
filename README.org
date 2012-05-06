@@ -6,7 +6,7 @@ only works for me.
 
 ** Screenshot
 
-[[./graph-screenshot.png]]
+[[file:graph-screenshot.png]]
 
 
 ** Dependencies
