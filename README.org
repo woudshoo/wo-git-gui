@@ -8,8 +8,7 @@ only works for me.
 
 #+CAPTION: A Clickable Graph of Neighborhood of selected revisions
 #+ATTR_HTML: alt="Screenshot of part of window, showing revision graph" title="Screenshot 1"
-[[img:graph-screenshot.png]]
-
+[[https://github.com/woudshoo/wo-git-gui/raw/master/graph-screenshot.png]]
 
 ** Dependencies
 
