@@ -119,10 +119,13 @@ or
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;;; Want to change it to weblocks.  If that is able to include svg's at least.
 ;;;
-
+(pushnew (hunchentoot:create-folder-dispatcher-and-handler
+	  "/include-files/"
+	  (merge-pathnames (make-pathname :directory '(:relative "include-files"))
+			   (asdf:system-source-directory :wo-git-gui)))
+	 hunchentoot:*dispatch-table*)
 
 (defun start-server (&optional &key (port 8988))
   "Start git gui webserver at port 8988 on this host."
@@ -374,10 +377,10 @@ not so sure yet."
       ((:html
 	 :xmlns "http://www.w3.org/1999/xhtml"
 	 "xmlns:svg" "http://www.w3.org/2000/svg"
-	 "xmlns:xlink" "http://www.w3.org/1999/xlink"
-	)
+	 "xmlns:xlink" "http://www.w3.org/1999/xlink")
        (:head
-	(:title "Neighborhood"))
+	(:title "Neighborhood")
+	(:link :rel "stylesheet" :href "/include-files/default.css"))
        (:body
 	(:h1 "NEIGHBORHOOD")
 	((:form :action "neighborhood-graph" :method "get")
@@ -393,7 +396,7 @@ not so sure yet."
 	 ((:input :type "submit" :value "Regenerate")))
 	(:h2 "Other graphs")
 	;; still to change vertex-a and vertex-b back to mark-a and mark-b
-	(:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A" 
+	(:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A"
 			  (url-encode (or mark-a vertex-a))
 			  (url-encode (or mark-b vertex-b))) "UNMERGED")
 	(:h2 "Versions")
