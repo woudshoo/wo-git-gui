@@ -13,7 +13,7 @@ only works for me.
 ** Initial setup
 
 The quickest way to start is using quicklisp and do the following:
-#+begin_src
+#+begin_src lisp
     (ql:quickload "wo-git-gui")
     (setf wo-git-gui:*git-project* "/Users/woudshoo/Development/Source/lisp-devel-systems/cl-git/.git")
     (wo-git-gui:read-graph)
@@ -26,7 +26,7 @@ So after starting the server you can point your browser to:
 
 This assumes that the system can find the git and dot executables.
 The paths to these are specified with
-#+begin_src
+#+begin_src lisp
      (setf wo-git:*git-command* "/usr/bin/git")
      (setf wo-git-gui:*dot-cmd* "/usr/bin/dot")
 #+end_src
