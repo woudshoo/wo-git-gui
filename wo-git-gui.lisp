@@ -344,6 +344,21 @@ list which will be formatted the same as for the `node-attributes'."
 	       (make-tmp-name base-name "svg")
 	       :node-href node-ref-string )))
 
+(defun write-info-selected-revision (vertex stream)
+
+  (cl-git:with-git-repository (*git-project*)
+    (let* ((commit (cl-git:git-commit-lookup  vertex))
+	   (author (cl-git:git-commit-author commit)))
+      (cl-who:with-html-output (s stream)
+	(:table
+	 (:tr (:td "Message")
+	      (:td (cl-who:str (cl-git:git-commit-message commit))))
+	 (:tr (:td "Author")
+	      (:td (cl-who:str (getf author :name))))
+	 (:tr (:td "Time")
+	      (:td (cl-who:str (getf author :time)))))
+	(cl-git:git-commit-close commit)))))
+
 
 (define-easy-handler (neighborhood :uri "/neighborhood-graph")
     (vertex distance mark-a mark-b)
@@ -383,50 +398,55 @@ not so sure yet."
 	(:link :rel "stylesheet" :href "/include-files/default.css"))
        (:body
 	(:h1 "NEIGHBORHOOD")
-	((:form :action "neighborhood-graph" :method "get")
-	 (:table
-	  (:tr (:td "Starting revision (blue)")
-	       (:td (html-select-git-name "mark-a" (or mark-a vertex-a) (wo-git:all-names *default-graph*) ss)))
-	  (:tr (:td "End revision (green)")
-	       (:td (html-select-git-name "mark-b" (or  mark-b vertex-b) (wo-git:all-names *default-graph*) ss)))
-	  (:tr (:td "Selected revision (red)")
-	       (:td (html-select-git-name "vertex" (or vertex vertex-vertex) (wo-git:all-names *default-graph*) ss)))
-	  (:tr (:td "Distance")
-	       (:td ((:input :type "text" :name "distance" :value distance-str)))))
-	 ((:input :type "submit" :value "Regenerate")))
-	(:h2 "Other graphs")
-	;; still to change vertex-a and vertex-b back to mark-a and mark-b
-	(:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A"
-			  (url-encode (or mark-a vertex-a))
-			  (url-encode (or mark-b vertex-b))) "UNMERGED")
-	(:h2 "Versions")
 	(:table
-	 (:tr (:th "Next Versions") (:th "Previous Versions"))
 	 (:tr
-	  (:td
+	  ((:td :valign "top")
+	   ((:form :action "neighborhood-graph" :method "get")
+	    (:table
+	     (:tr (:td "Starting revision (blue)")
+		  (:td (html-select-git-name "mark-a" (or mark-a vertex-a) (wo-git:all-names *default-graph*) ss)))
+	     (:tr (:td "End revision (green)")
+		  (:td (html-select-git-name "mark-b" (or  mark-b vertex-b) (wo-git:all-names *default-graph*) ss)))
+	     (:tr (:td "Selected revision (red)")
+		  (:td (html-select-git-name "vertex" (or vertex vertex-vertex) (wo-git:all-names *default-graph*) ss)))
+	     (:tr (:td "Distance")
+		  (:td ((:input :type "text" :name "distance" :value distance-str)))))
+	    ((:input :type "submit" :value "Regenerate")))
+	   (:h2 "Other graphs")
+	   ;; still to change vertex-a and vertex-b back to mark-a and mark-b
+	   (:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A"
+			     (url-encode (or mark-a vertex-a))
+			     (url-encode (or mark-b vertex-b))) "UNMERGED")
+	   (:h2 "Versions")
 	   (:table
+	    (:tr (:th "Next Versions") (:th "Previous Versions"))
 	    (:tr
-	     (loop :for name-list :in (version-or-after vertex-vertex)
-		:do
-		(cl-who:htm
-		 (:td
-		  (:table
-		   (loop :for name :in name-list :do
-		      (cl-who:htm
-		       (:tr (:td (cl-who:str name))))))))))))
-	  (:td
-	   (:table
-	    (:tr
-	     (loop :for name-list :in (version-or-before vertex-vertex)
-		:do
-		(cl-who:htm
-		 (:td
-		  (:table
-		   (loop :for name :in name-list :do
-		      (cl-who:htm
-		       (:tr (:td (cl-who:str name))))))))))))))
-	(:h2 "Graph")
-	(copy-file-to-stream (make-tmp-name base-name "svg") ss :skip 4))))))
+	     (:td
+	      (:table
+	       (:tr
+		(loop :for name-list :in (version-or-after vertex-vertex)
+		   :do
+		   (cl-who:htm
+		    (:td
+		     (:table
+		      (loop :for name :in name-list :do
+			 (cl-who:htm
+			  (:tr (:td (cl-who:str name))))))))))))
+	     (:td
+	      (:table
+	       (:tr
+		(loop :for name-list :in (version-or-before vertex-vertex)
+		   :do
+		   (cl-who:htm
+		    (:td
+		     (:table
+		      (loop :for name :in name-list :do
+			 (cl-who:htm
+			  (:tr (:td (cl-who:str name))))))))))))))
+	   (:h2 "Selected Revision")
+	   (write-info-selected-revision vertex-vertex ss))
+	  ((:td :valign "top")
+	   (copy-file-to-stream (make-tmp-name base-name "svg") ss :skip 4)))))))))
 
 (define-easy-handler (non-merged :uri "/unmerged")
     (mark-a mark-b)
