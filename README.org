@@ -13,12 +13,12 @@ only works for me.
 ** Initial setup
 
 The quickest way to start is using quicklisp and do the following:
-#+begin_example
+#+BEGIN_SRC common-lisp
     (ql:quickload "wo-git-gui")
     (setf wo-git-gui:*git-project* "/Users/woudshoo/Development/Source/lisp-devel-systems/cl-git/.git")
     (wo-git-gui:read-graph)
     (wo-git-gui:start-server)
-#+end_example
+#+END_SRC
 This will start an hunchentoot server on localhost port 8988.
 So after starting the server you can point your browser to:
 [[http://localhost:8988/neighborhood-graph]]
@@ -26,10 +26,10 @@ So after starting the server you can point your browser to:
 
 This assumes that the system can find the git and dot executables.
 The paths to these are specified with
-#+begin_example
+#+BEGIN_SRC common-lisp
      (setf wo-git:*git-command* "/usr/bin/git")
      (setf wo-git-gui:*dot-cmd* "/usr/bin/dot")
-#+end_example
+#+END_SRC
 
 ** Dependencies
 

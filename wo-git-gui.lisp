@@ -360,6 +360,43 @@ list which will be formatted the same as for the `node-attributes'."
 	(cl-git:git-commit-close commit)))))
 
 
+(defun write-version-info-revision (vertex stream)
+  (let ((versions-after (version-or-after vertex))
+	(versions-before (version-or-before vertex)))
+    (when (or versions-after versions-before)
+      (cl-who:with-html-output (s stream)
+	(:h2 "Versions")
+	(:table
+	 (:tr (when versions-after (cl-who:htm (:th "Next Versions")))
+	      (when versions-before (cl-who:htm (:th "Previous Versions"))))
+	 (:tr
+	  (when versions-after
+	    (cl-who:htm
+	     (:td
+	      (:table
+	       (:tr
+		(loop :for name-list :in versions-after
+		   :do
+		   (cl-who:htm
+		    (:td
+		     (:table
+		      (loop :for name :in name-list :do
+			 (cl-who:htm
+			  (:tr (:td (cl-who:str name))))))))))))))
+	  (when versions-before
+	    (cl-who:htm
+	     (:td
+	      (:table
+	       (:tr
+		(loop :for name-list :in versions-before
+		   :do
+		   (cl-who:htm
+		    (:td
+		     (:table
+		      (loop :for name :in name-list :do
+			 (cl-who:htm
+			  (:tr (:td (cl-who:str name))))))))))))))))))))
+
 (define-easy-handler (neighborhood :uri "/neighborhood-graph")
     (vertex distance mark-a mark-b)
   "Shows the default neighborhood graph with a default distance.
@@ -417,32 +454,7 @@ not so sure yet."
 	   (:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A"
 			     (url-encode (or mark-a vertex-a))
 			     (url-encode (or mark-b vertex-b))) "UNMERGED")
-	   (:h2 "Versions")
-	   (:table
-	    (:tr (:th "Next Versions") (:th "Previous Versions"))
-	    (:tr
-	     (:td
-	      (:table
-	       (:tr
-		(loop :for name-list :in (version-or-after vertex-vertex)
-		   :do
-		   (cl-who:htm
-		    (:td
-		     (:table
-		      (loop :for name :in name-list :do
-			 (cl-who:htm
-			  (:tr (:td (cl-who:str name))))))))))))
-	     (:td
-	      (:table
-	       (:tr
-		(loop :for name-list :in (version-or-before vertex-vertex)
-		   :do
-		   (cl-who:htm
-		    (:td
-		     (:table
-		      (loop :for name :in name-list :do
-			 (cl-who:htm
-			  (:tr (:td (cl-who:str name))))))))))))))
+	   (write-version-info-revision vertex-vertex ss)
 	   (:h2 "Selected Revision")
 	   (write-info-selected-revision vertex-vertex ss))
 	  ((:td :valign "top")
