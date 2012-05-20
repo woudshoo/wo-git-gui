@@ -169,6 +169,12 @@ the edge gray if one of the nodes is not interesting."
 	      "gray"
 	      "black"))))
 
+(defun simplify-node-name (name)
+  "Simplifies a full revision/tag name.  Typically they start with
+lots of junk like 'refs/remove/...'  so we shorten them a bit with
+this function."
+  (subseq name (+ 1 (or (position #\/ name :from-end t) -1))))
+
 (defun make-default-node-attribute (&optional &key (color))
   "Returns a node attribute function which will show either
 a dot if the vertex does not have any names or a box
@@ -178,7 +184,7 @@ If a color function is supplied it will be used to add a color attribute with
 the result of the `color' function called on the vertex."
   (lambda (v g)
     (concatenate 'list
-		 (alexandria:if-let ((names (wo-git:vertex-names v g)))
+		 (alexandria:if-let ((names (mapcar #'simplify-node-name (wo-git:vertex-names v g))))
 		   `(:shape :box :label ,(format nil "\"~{~A~^\\n~}\"" names))
 		   (list :shape :point))
 		 (when color
@@ -221,6 +227,46 @@ But this one will return a valid vertex even if the name is empty."
 		      :edge-attributes (make-default-edge-attributes #'selector))
 	result))))
 
+
+(defun classified-by-edge-graph (graph stream)
+  "Just for testing, very very inefficient."
+  (let* ((edge-vertices (mapcar (lambda (v) (name-or-rev-to-vertex v graph))
+			       (wo-git::boundary-names graph)))
+	 (classification (wo-graph-functions::classify-by-reacheability edge-vertices graph))
+	 (result (make-instance 'wo-git::git-graph))
+	 (seen-edges (make-hash-table :test #'equalp))
+	 (v-v-map (make-hash-table :test #'equalp))
+	 (counter 0))
+
+    (setf (wo-git::name-map result) (make-hash-table :test #'equalp))
+
+
+    (maphash (lambda (k v)
+	       (incf counter)
+	       (wo-graph:add-vertex counter result)
+	       (when (eq (caar k) (cadr k))
+		 (setf (gethash counter (wo-git::name-map result))
+		       (wo-git:vertex-names (caar k) graph)))
+	       (loop :for v2 :in v :do
+		  (setf (gethash v2 v-v-map) counter)))
+	     classification)
+
+    (setf (wo-git::reverse-name-map result) (wo-util:reverse-table (wo-git::name-map result)))
+    (loop :for v :in (wo-graph:all-vertices graph)
+       :for v2 = (gethash v v-v-map)
+       :do
+       (loop :for tv :in (wo-graph:targets-of-vertex v graph)
+	  :for tv2 = (gethash tv v-v-map)
+	  :do
+	  (unless (or (eql v2 tv2) (gethash (cons v2 tv2) seen-edges))
+	    (wo-graph:add-edge v2 tv2 nil result)
+	    (setf (gethash (cons v2 tv2) seen-edges) t))))
+
+
+    (write-to-dot stream result
+		  :node-attributes (make-default-node-attribute)
+		  :edge-attributes (make-default-edge-attributes
+				    (lambda (e g) t)))))
 
 (defun neighborhood-graph (vertex graph distance stream &optional &key
 			   mark-a mark-b (reducers *default-reducers*))
@@ -352,11 +398,11 @@ list which will be formatted the same as for the `node-attributes'."
       (cl-who:with-html-output (s stream)
 	(:table
 	 (:tr (:td "Message")
-	      (:td (cl-who:str (cl-git:git-commit-message commit))))
+	      (:td (cl-who:esc (cl-git:git-commit-message commit))))
 	 (:tr (:td "Author")
-	      (:td (cl-who:str (getf author :name))))
+	      (:td (cl-who:esc (getf author :name))))
 	 (:tr (:td "Time")
-	      (:td (cl-who:str (getf author :time)))))
+	      (:td (cl-who:esc (local-time:to-rfc1123-timestring (getf author :time))))))
 	(cl-git:git-commit-close commit)))))
 
 
@@ -459,6 +505,25 @@ not so sure yet."
 	   (write-info-selected-revision vertex-vertex ss))
 	  ((:td :valign "top")
 	   (copy-file-to-stream (make-tmp-name base-name "svg") ss :skip 4)))))))))
+
+(define-easy-handler (master-overview :uri "/master-view")
+    ()
+  "Shows the master graph"
+
+  (create-svg-graph "master"
+		    (lambda (s)
+		      (classified-by-edge-graph *default-graph* s)))
+  (setf (hunchentoot:content-type*) "application/xml")
+  (cl-who:with-html-output-to-string (s nil :prologue nil)
+    ((:html
+      :xmlns "http://www.w3.org/1999/xhtml"
+      "xmlns:svg" "http://www.w3.org/2000/svg"
+      "xmlns:xlink" "http://www.w3.org/1999/xlink")
+     (:thead
+      (:title "Master Ovierview"))
+     (:body
+      (:h1 "Master Overview")
+      (copy-file-to-stream (make-tmp-name "master" "svg") s :skip 4)))))
 
 (define-easy-handler (non-merged :uri "/unmerged")
     (mark-a mark-b)
