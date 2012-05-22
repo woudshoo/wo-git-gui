@@ -244,9 +244,10 @@ But this one will return a valid vertex even if the name is empty."
     (maphash (lambda (k v)
 	       (incf counter)
 	       (wo-graph:add-vertex counter result)
-	       (when (eq (caar k) (cadr k))
-		 (setf (gethash counter (wo-git::name-map result))
-		       (wo-git:vertex-names (caar k) graph)))
+	       (setf (gethash counter (wo-git::name-map result))
+		     (if (eq (caar k) (cadr k))
+			 (wo-git:vertex-names (caar k) graph)
+			 (list (format nil "#: ~D" (length v)))))
 	       (loop :for v2 :in v :do
 		  (setf (gethash v2 v-v-map) counter)))
 	     classification)
