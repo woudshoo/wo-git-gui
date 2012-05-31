@@ -393,18 +393,18 @@ list which will be formatted the same as for the `node-attributes'."
 
 (defun write-info-selected-revision (vertex stream)
 
-  (cl-git:with-git-repository (*git-project*)
+  (cl-git:with-repository (*git-project*)
     (let* ((commit (cl-git:git-commit-lookup  vertex))
-	   (author (cl-git:git-commit-author commit)))
+	   (author (cl-git:commit-author commit)))
       (cl-who:with-html-output (s stream)
 	(:table
 	 (:tr (:td "Message")
-	      (:td (cl-who:esc (cl-git:git-commit-message commit))))
+	      (:td (cl-who:esc (cl-git:commit-message commit))))
 	 (:tr (:td "Author")
 	      (:td (cl-who:esc (getf author :name))))
 	 (:tr (:td "Time")
 	      (:td (cl-who:esc (local-time:to-rfc1123-timestring (getf author :time))))))
-	(cl-git:git-commit-close commit)))))
+#+nil	(cl-git:git-object-free commit)))))
 
 
 (defun write-version-info-revision (vertex stream)
