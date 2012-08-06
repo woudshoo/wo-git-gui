@@ -10,7 +10,7 @@
   #+win32 "d:/Programs/graphviz/bin/dot.exe")
 
 (defparameter *git-project*
-  #P"/Users/woudshoo/Development/Source/lisp-devel-systems/wo-git-gui/.git")
+  #P"/Users/woudshoo/Development/Source/Lisp/wo-git-gui/.git")
 
 (defparameter *webserver-acceptor* nil)
 (defparameter *default-graph* nil)
@@ -48,8 +48,11 @@
 					   g)))))
 
 
-(setf (logical-pathname-translations "tmp")
-      '(("**;*.*.*" "/tmp/")))
+;;(eval-when (:compile-toplevel :execute :load-top-level))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (setf (logical-pathname-translations "tmp")
+	'(("**;*.*.*" "/tmp/"))))
 
 
 (defun make-tmp-name (base-name type)
@@ -130,7 +133,7 @@ or
 (defun start-server (&optional &key (port 8988))
   "Start git gui webserver at port 8988 on this host."
   (unless *webserver-acceptor*
-    (setf *webserver-acceptor* (make-instance 'hunchentoot:acceptor :port port)))
+    (setf *webserver-acceptor* (make-instance 'hunchentoot:easy-acceptor :port port)))
   (hunchentoot:start *webserver-acceptor*))
 
 (defun stop-server ()
