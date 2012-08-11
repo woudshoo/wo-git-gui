@@ -15,7 +15,54 @@
 (defparameter *webserver-acceptor* nil)
 (defparameter *default-graph* nil)
 
-(defparameter *dead-revisions* nil)
+(defparameter *dead-revisions*  '("F0BCC1A07FFB8E0BC0098B679C5BB79C92208337"
+				  "7091DFADB75F1D895F527DCF880915DD243C8047"
+				  "FEBF3F4A1780FA249C7ADC3C58DC7FF75751D61C"
+				  "952B1C5647528855A2BF5E4E52ABAE4DAA2D3D4F"
+				  "391F4E6A0AE71C99B0E822A981F3C94155B7062A"
+				  "9EDA00F6C3422F7C85B0D2306BD00D7A74FA31F6"
+				  "0299B35B107A7446AE33EEEACD131ED4093C3956"
+				  "9C4CF09585BC879770AECE7C19BF5217A42BF41F"
+				  "CC859C37D9F4280159839BD92ACAE8681A9A6706"
+				  "DA137585F0460EEABB4C63FC2115F6B2D7537825"
+				  "4286494064976A89452EB52F85FD4E03006DA5FD" ;; nextmajor
+				  "CF52C30B0B84E5E8126AEA6B79F710543D0A6BA6"
+				  "6506AA16859E815DE4C384DB3C443B3ADEE1B201"
+				  "6BC8C53C6B8080CB095A0BC35CC06055463DB7EE"
+				  "FFD9E70E636C8C4F763DF82064F4C328CCCB330D"
+				  "71C7509FEEB234174E9876051E9F99C917A0B1A6"
+				  "C13BCBFAEC238394BFF8558E422D25EA5CA01DB6" ;; keep table modifications
+				  "086DB3D876D6819F1B0B162FB93F0636501E0F57"
+
+				  ;;;; testing
+
+				  "56B42CE22FF63BDC6A2A2C1548E10FFECEC6ABE5"
+
+				  ;;;; list for TODO.org
+				  "32D04CA435FAF8B54E1FA992570EFCC4FE171F95"
+				  "45A98B42AD00946A06E01223BDB682AE56EC5F2C"
+				  "D372AF3358BCC9AE550D2D025C082F61CFC56C3B"
+				  "B6F2A2CBA01893B3416A907048E2029C5957E4B0"
+				  "642728CBA67CD7A985857C53882BC878C5D20070"
+				  "4949740753B4EF96811AE54FC8180B750D888208"
+				  "681CAF77F9607C63D0C10073F70BA1BF1A2697F5"
+				  "1BF27E8C649FDFF4AAC160F704FB8B224BD6AD07"
+				  "6571BA8F8594D944C31F9F61BF6F65DAEE89A55F"
+				  "823756B8A07AE6C4F9E5DF774F0528392D7FF451"
+				  "08489F848F6F2C0972FC9C3C2764EEBA95DFD1A5"
+				  "EF9EE96A72BC8EABE277B6E636B3C1D9ADF6C985"
+				  "3D5D788D72ADD658D8FF53FB49663E526D29C63D"
+				  "54E4BAEB8E25BFA4600E78C0987738C88FB9FB44"
+				  "5EF1977BFF43F5243F252C45DF6903C29C12725F"
+				  "CE1F85618CACDC3CCA303EB96803257209939252"
+				  "C3AC4E4BBD7B6D59F500EE9084EF1CECD46507FB"
+				  "6878D943118FEE9CE6AF671C8FDE9E902C3C88A5"
+				  "08A9CFC10FDEF03FA0410B21C5AA45A9E10219A9"
+				  "850654138B55E393066C4D1D15C685D0571507BA"
+				  "F0662B5A3ADA491AA2747AC48EF6D743A33B1361"
+				  "B4B4143080F78DFD743169D1DB5DF95451BC66E0"
+				  "AD76190277BFED9F465E8FF3A6F76B596E471428"
+				  ))
 
 (defparameter *version-names-scanner*
   (cl-ppcre:create-scanner "v[0-9]+\\.[0-9]+\\.[0-9]\\.[0-9]+"))
@@ -83,7 +130,7 @@ from the logical path tmp, so be carefull."
   (setf *default-graph* (wo-git:get-git-graph git-project)))
 
 (defun reset ()
-  (wo-git:run-git *git-project* "fetch")
+;  (wo-git:run-git *git-project* "fetch")
   (clear-cache)
   (read-graph))
 
@@ -213,7 +260,8 @@ But this one will return a valid vertex even if the name is empty."
 	       (or (equalp mark-a v)
 		   (and (wo-git:vertex-names v g)
 			(and (member v outgoing-a :test #'equalp))
-			(not (member v incoming-b :test #'equalp)))))
+			(not (member v incoming-b :test #'equalp))
+			(not (member v *dead-revisions* :test #'equalp)))))
 
 	     (color (v)
 	       (cond
@@ -233,8 +281,10 @@ But this one will return a valid vertex even if the name is empty."
 
 (defun classified-by-edge-graph (graph stream)
   "Just for testing, very very inefficient."
-  (let* ((edge-vertices (mapcar (lambda (v) (name-or-rev-to-vertex v graph))
-			       (wo-git::boundary-names graph)))
+  (let* ((edge-vertices  (wo-util:remove-from-set (mapcar (lambda (v) (name-or-rev-to-vertex v graph))
+							  (wo-git::boundary-names graph))
+						  *dead-revisions*
+						  :test #'equalp))
 	 (classification (wo-graph-functions::classify-by-reacheability edge-vertices graph))
 	 (result (make-instance 'wo-git::git-graph))
 	 (seen-edges (make-hash-table :test #'equalp))
@@ -372,7 +422,6 @@ list which will be formatted the same as for the `node-attributes'."
   (cl-who:with-html-output (s stream)
     ((:select :name var-name)
      (loop :for name :in (sort (copy-seq names) #'string<)
-	:for vertex = (wo-git:name-to-vertex name *default-graph*)
 	:finally (when default-vertex
 		   (cl-who:htm ((:option :value default-vertex :selected "true")
 				 (cl-who:str default-vertex))))
@@ -529,6 +578,29 @@ not so sure yet."
       (:h1 "Master Overview")
       (copy-file-to-stream (make-tmp-name "master" "svg") s :skip 4)))))
 
+(define-easy-handler (boundary :uri "/boundary")
+    ()
+  (cl-who:with-html-output-to-string (s)
+    ((:html)
+     (:thead
+      (:title "---Boundary---"))
+     (:body
+      (:h1 "Boundary")
+      (:table
+       (cl-git:with-repository (*git-project*)
+	 (loop :for name :in (sort (wo-git::boundary-names *default-graph*) #'string<)
+	    :for rev = (wo-git:name-to-vertex name *default-graph*)
+	    :for commit = (cl-git:git-commit-lookup rev)
+	    :for author = (cl-git:commit-author commit)
+	    :for author-name = (getf author :name)
+	    :for author-time = (getf author :time)
+	    :do
+	    (cl-who:htm
+	     (:tr (:td (cl-who:str name)) (:td (cl-who:str (subseq rev 0 5 )))
+		  (:td (cl-who:str author-name)) 
+		  (:td (cl-who:str author-time)))
+	     (cl-git:git-object-free commit)))))))))
+
 (define-easy-handler (non-merged :uri "/unmerged")
     (mark-a mark-b)
   (let* ((*print-pretty* nil)
@@ -598,6 +670,13 @@ not so sure yet."
 
 
 (defun version-or-before (vertex)
+"Given a vertex in the git graphs stored in *default-graph* it will
+return a list of versions which is either contains the version of
+`vertex' if `vertex' has a version, or the minimal set of versions
+preceding `vertex'.  
+
+A version is a tag/branch name matching the regular expresion *version-names-scanner*.
+"
   (flet ((selector (v graph)
 	   (let ((names (wo-git:vertex-names v graph)))
 	     (some (lambda (name)
