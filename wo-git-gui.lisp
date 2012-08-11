@@ -168,6 +168,16 @@ or
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defun vertex-or-name-to-string (vertex)
+  (etypecase vertex
+    (integer (format nil "~(~40,'0X~)" vertex))
+    (string vertex)))
+
+(defun vertex-or-name-to-url-id (vertex)
+  "Encodes a vertex or a symbolic name to a string suitable for embedding in a url.
+The converse function is basically `name-or-rev-to-vertex'. Except for the asymmetry that this function does `url-encode' and the `name-or-rev-to-vertex' does not do the decode."
+  (url-encode (vertex-or-name-to-string vertex)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Want to change it to weblocks.  If that is able to include svg's at least.
 ;;;
@@ -393,7 +403,7 @@ list which will be formatted the same as for the `node-attributes'."
     (loop :for node :in (wo-graph:all-vertices graph)
        :for attributes = (funcall node-attributes node graph)
        :do
-       (format stream "\"~A\"~@[ [~{~A=~A~^,~}]~];~%" node attributes))
+       (format stream "\"~A\"~@[ [~{~A=~A~^,~}]~];~%" (vertex-or-name-to-string node) attributes))
     (loop :for node :in (wo-graph:all-vertices graph)
        :do
        (loop :for edge :in (wo-graph:outgoing-edges node graph)
@@ -401,7 +411,7 @@ list which will be formatted the same as for the `node-attributes'."
 	  :do
 	  (when target
 	    (format stream "\"~A\" -> \"~A\"~@[ [~{~A=~A~^,~}]~];~%"
-		    node target
+		    (vertex-or-name-to-string node) (vertex-or-name-to-string target)
 		    (funcall edge-attributes edge graph)))))
     (format stream "}")))
 
@@ -419,17 +429,20 @@ list which will be formatted the same as for the `node-attributes'."
        (write-line line stream))))
 
 (defun html-select-git-name (var-name default-vertex names stream)
+  "`default-vertx' can either be a string indiciating a reference, or a integer, indicating a revision."
   (cl-who:with-html-output (s stream)
     ((:select :name var-name)
-     (loop :for name :in (sort (copy-seq names) #'string<)
-	:finally (when default-vertex
+     (loop 
+	:with default-name = (vertex-or-name-to-string default-vertex)
+	:for name :in (sort (copy-seq names) #'string<)
+	:finally (when default-name
 		   (cl-who:htm ((:option :value default-vertex :selected "true")
-				 (cl-who:str default-vertex))))
+				 (cl-who:str default-name))))
 	:do
-	(if (string-equal name default-vertex)
+	(if (string-equal name default-name)
 	    (progn (cl-who:htm
 		    ((:option :value name :selected "true") (cl-who:str name)))
-		   (setf default-vertex nil))
+		   (setf default-name nil))
 	    (cl-who:htm
 	     ((:option :value name) (cl-who:str name))))))))
 
@@ -519,8 +532,8 @@ not so sure yet."
 					    distance s
 					    :mark-a vertex-a :mark-b vertex-b))
 		      (format nil "neighborhood-graph?vertex=\\N&distance=~D&mark-a=~A&mark-b=~A"
-			      distance (url-encode (or mark-a vertex-a))
-			      (url-encode (or mark-b vertex-b))))
+			      distance (vertex-or-name-to-url-id (or mark-a vertex-a))
+			      (vertex-or-name-to-url-id (or mark-b vertex-b))))
 
     (setf (hunchentoot:content-type*) "application/xml")
 
@@ -551,8 +564,8 @@ not so sure yet."
 	   (:h2 "Other graphs")
 	   ;; still to change vertex-a and vertex-b back to mark-a and mark-b
 	   (:a :href (format nil "unmerged?mark-a=~A&amp;mark-b=~A"
-			     (url-encode (or mark-a vertex-a))
-			     (url-encode (or mark-b vertex-b))) "UNMERGED")
+			     (vertex-or-name-to-url-id (or mark-a vertex-a))
+			     (vertex-or-name-to-url-id (or mark-b vertex-b))) "UNMERGED")
 	   (write-version-info-revision vertex-vertex ss)
 	   (:h2 "Selected Revision")
 	   (write-info-selected-revision vertex-vertex ss))
@@ -596,7 +609,7 @@ not so sure yet."
 	    :for author-time = (getf author :time)
 	    :do
 	    (cl-who:htm
-	     (:tr (:td (cl-who:str name)) (:td (cl-who:str (subseq rev 0 5 )))
+	     (:tr (:td (cl-who:str name)) (:td (cl-who:str (subseq (vertex-or-name-to-string rev) 0 5 )))
 		  (:td (cl-who:str author-name)) 
 		  (:td (cl-who:str author-time)))
 	     (cl-git:git-object-free commit)))))))))
@@ -614,7 +627,8 @@ not so sure yet."
 	    vertex-a #'wo-graph:targets-of-vertex
 	    vertex-b #'wo-graph:sources-of-vertex
 	    *default-graph*)
-	   *dead-revisions* :test #'string-equal)))
+	   (mapcar (lambda (s) (name-or-rev-to-vertex s *default-graph*)) *dead-revisions*) 
+	   :test #'eql)))
 
     (create-svg-graph base-name
 		      (lambda (s)
@@ -639,7 +653,10 @@ not so sure yet."
 	       (:td (html-select-git-name "mark-b" mark-b (wo-git:all-names *default-graph*) s)))
 	  ((:input :type "submit" :value "Regenerate"))))
 	(:h2 "Other graphs")
-	(:a :href (format nil "neighborhood-graph?vertex=~A&amp;mark-a=~A&amp;mark-b=~A" (url-encode mark-a) (url-encode mark-a) (url-encode mark-b)) "NEIGHBORHOOD")
+	(:a :href (format nil "neighborhood-graph?vertex=~A&amp;mark-a=~A&amp;mark-b=~A"
+			  (vertex-or-name-to-url-id mark-a) 
+			  (vertex-or-name-to-url-id mark-a)
+			  (vertex-or-name-to-url-id mark-b)) "NEIGHBORHOOD")
 	(:h2 "Table")
 	(:table
 	 (loop :for rev :in unmerged-revisions
