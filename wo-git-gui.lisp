@@ -67,6 +67,9 @@
 (defparameter *version-names-scanner*
   (cl-ppcre:create-scanner "v[0-9]+\\.[0-9]+\\.[0-9]\\.[0-9]+"))
 
+(defparameter *filter-names-scanner*
+  (cl-ppcre:create-scanner "/bob/"))
+
 (defparameter *default-reducers*
   (list
    (wo-graph-functions:make-single-sided-reducer
@@ -285,7 +288,8 @@ But this one will return a valid vertex even if the name is empty."
 	(write-to-dot stream result
 		      :graph-attributes '(:rankdir "LR")
 		      :node-attributes (make-default-node-attribute :color #'color)
-		      :edge-attributes (make-default-edge-attributes #'selector))
+		      :edge-attributes (make-default-edge-attributes #'selector)
+		      :node-to-id #'vertex-or-name-to-string)
 	result))))
 
 
@@ -330,7 +334,8 @@ But this one will return a valid vertex even if the name is empty."
     (write-to-dot stream result
 		  :node-attributes (make-default-node-attribute)
 		  :edge-attributes (make-default-edge-attributes
-				    (lambda (e g) t)))))
+				    (lambda (e g) t))
+		  :node-to-id #'vertex-or-name-to-string)))
 
 (defun neighborhood-graph (vertex graph distance stream &optional &key
 			   mark-a mark-b (reducers *default-reducers*))
@@ -368,7 +373,8 @@ to the graph.  This list of reducers is what makes the graph smaller."
 						 :reducers reducers)))
 	(write-to-dot stream result
 		      :node-attributes (make-default-node-attribute :color #'color)
-		      :edge-attributes (make-color-edge-attributes))
+		      :edge-attributes (make-color-edge-attributes)
+		      :node-to-id #'vertex-or-name-to-string)
 	result))))
 
 
@@ -377,43 +383,6 @@ to the graph.  This list of reducers is what makes the graph smaller."
     (if names
 	(list :shape "box" :label (format nil "\"~{~A~^\\n~}\"" names))
 	(list :shape "point"))))
-
-(defun write-to-dot (stream graph &optional &key
-		     (graph-attributes nil)
-		     (node-attributes (constantly nil))
-		     (edge-attributes (constantly nil)))
-  "Writes the `graph' as a dot digraph graph to `stream'.
-The formatting of the nodes and edges is optionally modified
-by the functions `node-attributes' and `edge-attributes'.
-
-The optional argument `graph-attributes' is a property list and
-is written at the beginning of the graph.
-
-If function `node-attributes' is a function taking two arguments,
-a vertex and the graph.   It should return a property list with
-such as (:shape :box :label \"text\") and these will be incorperated
-into the dot file as ... [shape=box,label=\"text\"].
-
-The same holds for `edge-attributes', however this is a function of 2 arguments
-the edge and graph.  But the result should again be a property
-list which will be formatted the same as for the `node-attributes'."
-  (let ((*print-right-margin* 10000)
-	(*print-case* :downcase))
-    (format stream "digraph {~%~@[~{~A=~A;~^~%~}~]~%" graph-attributes)
-    (loop :for node :in (wo-graph:all-vertices graph)
-       :for attributes = (funcall node-attributes node graph)
-       :do
-       (format stream "\"~A\"~@[ [~{~A=~A~^,~}]~];~%" (vertex-or-name-to-string node) attributes))
-    (loop :for node :in (wo-graph:all-vertices graph)
-       :do
-       (loop :for edge :in (wo-graph:outgoing-edges node graph)
-	  :for target = (car (wo-graph:target-vertex edge graph))
-	  :do
-	  (when target
-	    (format stream "\"~A\" -> \"~A\"~@[ [~{~A=~A~^,~}]~];~%"
-		    (vertex-or-name-to-string node) (vertex-or-name-to-string target)
-		    (funcall edge-attributes edge graph)))))
-    (format stream "}")))
 
 
 
@@ -509,6 +478,10 @@ list which will be formatted the same as for the `node-attributes'."
 			 (cl-who:htm
 			  (:tr (:td (cl-who:str name))))))))))))))))))))
 
+(defun git-names-for-dropdown (graph)
+  (remove-if (lambda (s) (cl-ppcre:scan *filter-names-scanner* s))
+	     (wo-git:all-names graph)))
+
 (define-easy-handler (neighborhood :uri "/neighborhood-graph")
     (vertex distance mark-a mark-b)
   "Shows the default neighborhood graph with a default distance.
@@ -553,11 +526,11 @@ not so sure yet."
 	   ((:form :action "neighborhood-graph" :method "get")
 	    (:table
 	     (:tr (:td "Starting revision (blue)")
-		  (:td (html-select-git-name "mark-a" (or mark-a vertex-a) (wo-git:all-names *default-graph*) ss)))
+		  (:td (html-select-git-name "mark-a" (or mark-a vertex-a) (git-names-for-dropdown *default-graph*) ss)))
 	     (:tr (:td "End revision (green)")
-		  (:td (html-select-git-name "mark-b" (or  mark-b vertex-b) (wo-git:all-names *default-graph*) ss)))
+		  (:td (html-select-git-name "mark-b" (or  mark-b vertex-b) (git-names-for-dropdown *default-graph*) ss)))
 	     (:tr (:td "Selected revision (red)")
-		  (:td (html-select-git-name "vertex" (or vertex vertex-vertex) (wo-git:all-names *default-graph*) ss)))
+		  (:td (html-select-git-name "vertex" (or vertex vertex-vertex) (git-names-for-dropdown *default-graph*) ss)))
 	     (:tr (:td "Distance")
 		  (:td ((:input :type "text" :name "distance" :value distance-str)))))
 	    ((:input :type "submit" :value "Regenerate")))

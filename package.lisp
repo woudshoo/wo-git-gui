@@ -7,6 +7,8 @@
 		#:send-headers
 		#:define-easy-handler
 		#:url-encode)
+  (:import-from #:wo-graph-functions
+		#:write-to-dot)
   (:export
    #:*default-graph*
    #:start-server
