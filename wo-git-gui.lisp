@@ -576,8 +576,8 @@ not so sure yet."
        (cl-git:with-repository (*git-project*)
 	 (loop :for name :in (sort (wo-git::boundary-names *default-graph*) #'string<)
 	    :for rev = (wo-git:name-to-vertex name *default-graph*)
-	    :for commit = (cl-git:git-commit-lookup rev)
-	    :for author = (cl-git:commit-author commit)
+	    :for commit = (cl-git:git-lookup rev)
+	    :for author = (cl-git:git-author commit)
 	    :for author-name = (getf author :name)
 	    :for author-time = (getf author :time)
 	    :do
