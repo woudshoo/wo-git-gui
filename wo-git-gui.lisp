@@ -428,12 +428,12 @@ to the graph.  This list of reducers is what makes the graph smaller."
 (defun write-info-selected-revision (vertex stream)
 
   (cl-git:with-repository (*git-project*)
-    (let* ((commit (cl-git:git-commit-lookup  vertex))
-	   (author (cl-git:commit-author commit)))
+    (let* ((commit (cl-git:git-lookup vertex))
+	   (author (cl-git:git-author commit)))
       (cl-who:with-html-output (s stream)
 	(:table
 	 (:tr (:td "Message")
-	      (:td (cl-who:esc (cl-git:commit-message commit))))
+	      (:td (cl-who:esc (cl-git:git-message commit))))
 	 (:tr (:td "Author")
 	      (:td (cl-who:esc (getf author :name))))
 	 (:tr (:td "Time")
