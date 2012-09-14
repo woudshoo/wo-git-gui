@@ -428,7 +428,7 @@ to the graph.  This list of reducers is what makes the graph smaller."
 (defun write-info-selected-revision (vertex stream)
 
   (cl-git:with-repository (*git-project*)
-    (let* ((commit (cl-git:git-lookup vertex))
+    (let* ((commit (cl-git:git-lookup 'cl-git:object vertex))
 	   (author (cl-git:git-author commit)))
       (cl-who:with-html-output (s stream)
 	(:table
@@ -438,7 +438,7 @@ to the graph.  This list of reducers is what makes the graph smaller."
 	      (:td (cl-who:esc (getf author :name))))
 	 (:tr (:td "Time")
 	      (:td (cl-who:esc (local-time:to-rfc1123-timestring (getf author :time))))))
-#+nil	(cl-git:git-object-free commit)))))
+	(cl-git:git-free commit)))))
 
 
 (defun write-version-info-revision (vertex stream)
