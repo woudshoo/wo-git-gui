@@ -428,7 +428,7 @@ to the graph.  This list of reducers is what makes the graph smaller."
 (defun write-info-selected-revision (vertex stream)
 
   (cl-git:with-repository (*git-project*)
-    (let* ((commit (cl-git:git-lookup 'cl-git:object vertex))
+    (let* ((commit (cl-git:git-lookup :object vertex))
 	   (author (cl-git:git-author commit)))
       (cl-who:with-html-output (s stream)
 	(:table
@@ -576,7 +576,7 @@ not so sure yet."
        (cl-git:with-repository (*git-project*)
 	 (loop :for name :in (sort (wo-git::boundary-names *default-graph*) #'string<)
 	    :for rev = (wo-git:name-to-vertex name *default-graph*)
-	    :for commit = (cl-git:git-lookup rev)
+	    :for commit = (cl-git:git-lookup :commit rev)
 	    :for author = (cl-git:git-author commit)
 	    :for author-name = (getf author :name)
 	    :for author-time = (getf author :time)
@@ -585,7 +585,7 @@ not so sure yet."
 	     (:tr (:td (cl-who:str name)) (:td (cl-who:str (subseq (vertex-or-name-to-string rev) 0 5 )))
 		  (:td (cl-who:str author-name)) 
 		  (:td (cl-who:str author-time)))
-	     (cl-git:git-object-free commit)))))))))
+	     (cl-git:git-free commit)))))))))
 
 (define-easy-handler (non-merged :uri "/unmerged")
     (mark-a mark-b)
