@@ -582,7 +582,8 @@ not so sure yet."
 	    :for author-time = (getf author :time)
 	    :do
 	    (cl-who:htm
-	     (:tr (:td (cl-who:str name)) (:td (cl-who:str (subseq (vertex-or-name-to-string rev) 0 5 )))
+	     (:tr (:td (cl-who:str name)) 
+		  (:td (cl-who:str (subseq (vertex-or-name-to-string rev) 0 5 )))
 		  (:td (cl-who:str author-name)) 
 		  (:td (cl-who:str author-time)))
 	     (cl-git:git-free commit)))))))))
